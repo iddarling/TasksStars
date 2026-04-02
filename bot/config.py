@@ -15,7 +15,10 @@ class TelegramConfig:
 
 class DatabaseConfig:
     def __init__(self):
-        self.url = os.getenv('DATABASE_URL', 'sqlite+aiosqlite:///./bot.db')
+        url = os.getenv('DATABASE_URL', 'sqlite+aiosqlite:///./bot.db')
+        if url.startswith('postgres://'):
+            url = url.replace('postgres://', 'postgresql+asyncpg://', 1)
+        self.url = url
 
 
 class NotificationConfig:
