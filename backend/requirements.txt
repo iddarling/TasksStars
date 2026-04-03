@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+gunicorn
+pydantic[email]
+pydantic-settings
+sqlalchemy>=2.0.0
+asyncpg
+alembic
+python-jose[cryptography]
+bcrypt==4.0.1
+passlib
+python-multipart
+pywebpush
+apscheduler
+httpx
+python-dotenv
+cryptography

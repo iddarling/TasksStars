@@ -1,0 +1,39 @@
+services:
+  # PostgreSQL Database
+  - type: postgres
+    name: taskstars-db
+    plan: free
+    ipAllowList: []
+
+  # Backend FastAPI Service
+  - type: web
+    name: taskstars-backend
+    runtime: python
+    plan: free
+    buildCommand: cd backend && pip install -r requirements.txt
+    startCommand: cd backend && ./start-production.sh
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: taskstars-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: VAPID_EMAIL
+        value: admin@taskstars.app
+    healthCheckPath: /
+
+  # Frontend Next.js Service
+  - type: web
+    name: taskstars-frontend
+    runtime: node
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.17.0
+      - key: NEXT_PUBLIC_API_URL
+        value: https://taskstars-backend.onrender.com
