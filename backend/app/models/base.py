@@ -101,8 +101,9 @@ class Task(Base):
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # Admin who approved
     
     # Task settings
-    requires_review = Column(Boolean, default=True)  # If True, admin must approve completion
+    requires_review = Column(Boolean, default=True)  # If True, admin must approve completions
     is_personal = Column(Boolean, default=False)  # If True, only visible to creator
+    deadline = Column(DateTime, nullable=True)  # Optional deadline for the task
     
     created_at = Column(DateTime, default=datetime.utcnow)
     approved_at = Column(DateTime, nullable=True)

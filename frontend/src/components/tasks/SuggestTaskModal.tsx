@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAppStore } from '@/store/appStore';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Calendar } from 'lucide-react';
 
 interface SuggestTaskModalProps {
   onClose: () => void;
@@ -15,6 +15,7 @@ const SuggestTaskModal: React.FC<SuggestTaskModalProps> = ({ onClose }) => {
   const [type, setType] = useState<'daily' | 'one-time'>('one-time');
   const [points, setPoints] = useState(10);
   const [requiresReview, setRequiresReview] = useState(true);
+  const [deadline, setDeadline] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +27,7 @@ const SuggestTaskModal: React.FC<SuggestTaskModalProps> = ({ onClose }) => {
         type,
         points,
         requires_review: requiresReview,
+        deadline,
       });
       onClose();
     } catch (error) {
@@ -110,6 +112,26 @@ const SuggestTaskModal: React.FC<SuggestTaskModalProps> = ({ onClose }) => {
               required
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-white focus:outline-none focus:border-yellow-500 transition-colors"
             />
+          </div>
+
+          <div>
+            <label className="text-zinc-500 text-[10px] uppercase font-bold tracking-wider block mb-2">
+              Deadline (Optional)
+            </label>
+            <div className="relative">
+              <Calendar size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <input
+                type="date"
+                value={deadline || ''}
+                onChange={(e) => setDeadline(e.target.value || null)}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 pl-12 text-white focus:outline-none focus:border-yellow-500 transition-colors"
+              />
+            </div>
+            {deadline && (
+              <p className="text-[10px] text-yellow-500 mt-1">
+                Task must be completed by: {new Date(deadline).toLocaleDateString()}
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-3 p-4 bg-zinc-950 rounded-xl">

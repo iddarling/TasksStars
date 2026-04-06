@@ -2,10 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from '@/store/appStore';
+import { useSearchParams, useRouter } from 'next/navigation';
 import TaskCard from '@/components/tasks/TaskCard';
 import ActiveTaskCard from '@/components/tasks/ActiveTaskCard';
 import SuggestTaskModal from '@/components/tasks/SuggestTaskModal';
-import { Search, Loader2, Plus, Clock } from 'lucide-react';
+import MiniCalendar from '@/components/MiniCalendar';
+import { Search, Loader2, Plus, Clock, Calendar, X } from 'lucide-react';
 
 // Helper to format seconds to HH:MM:SS
 const formatTime = (seconds: number) => {
@@ -16,6 +18,10 @@ const formatTime = (seconds: number) => {
 };
 
 export default function TasksPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const dateFilter = searchParams.get('date');
+  
   const { 
     tasks, 
     activeCompletions,
@@ -36,6 +42,7 @@ export default function TasksPage() {
   const [search, setSearch] = useState('');
   const [showSuggestModal, setShowSuggestModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'available' | 'active' | 'pending' | 'review' | 'completed'>('available');
+  const [showCalendar, setShowCalendar] = useState(false);
 
   useEffect(() => {
     fetchTasks();
@@ -70,7 +77,21 @@ export default function TasksPage() {
     const matchesFilter = filter === 'all' || task.type === filter;
     const matchesSearch = task.title.toLowerCase().includes(search.toLowerCase()) || 
                           task.description.toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch && task.status === 'active';
+    
+    // Date filtering - when date is selected, show ONLY tasks with deadline on that date
+    let matchesDate = true;
+    if (dateFilter && activeTab === 'available') {
+      if (task.deadline) {
+        // Check if task deadline matches the selected date
+        const taskDeadline = new Date(task.deadline).toISOString().split('T')[0];
+        matchesDate = taskDeadline === dateFilter;
+      } else {
+        // Tasks without deadline do NOT show when a specific date is selected
+        matchesDate = false;
+      }
+    }
+    
+    return matchesFilter && matchesSearch && matchesDate && task.status === 'active';
   });
 
   const handleStartTask = async (taskId: number) => {
@@ -89,13 +110,54 @@ export default function TasksPage() {
           <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter shadow-yellow-500/20 drop-shadow-lg">TASKS</h1>
           <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em]">MISSION CONTROL</p>
         </div>
-        <button
-          onClick={() => setShowSuggestModal(true)}
-          className="bg-yellow-500 text-black p-3 rounded-xl hover:bg-yellow-400 transition-colors"
-        >
-          <Plus size={20} />
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowCalendar(!showCalendar)}
+            className={`p-3 rounded-xl transition-colors ${showCalendar ? 'bg-yellow-500 text-black' : 'bg-zinc-900 text-yellow-500'}`}
+          >
+            <Calendar size={20} />
+          </button>
+          <button
+            onClick={() => setShowSuggestModal(true)}
+            className="bg-yellow-500 text-black p-3 rounded-xl hover:bg-yellow-400 transition-colors"
+          >
+            <Plus size={20} />
+          </button>
+        </div>
       </header>
+
+      {/* DATE FILTER INDICATOR */}
+      {dateFilter && (
+        <div className="flex items-center justify-between bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3">
+          <div className="flex items-center gap-2">
+            <Calendar size={16} className="text-yellow-500" />
+            <span className="text-yellow-500 text-sm font-bold">
+              Tasks for: {new Date(dateFilter).toLocaleDateString()}
+            </span>
+          </div>
+          <button
+            onClick={() => router.push('/tasks')}
+            className="text-zinc-500 hover:text-white"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
+
+      {/* CALENDAR */}
+      {showCalendar && (
+        <MiniCalendar 
+          selectedDate={dateFilter}
+          onDateSelect={(date) => {
+            if (date) {
+              router.push(`/tasks?date=${date}`);
+            } else {
+              router.push('/tasks');
+            }
+            setShowCalendar(false);
+          }}
+        />
+      )}
 
       {/* TABS */}
       <div className="flex gap-2 flex-wrap">

@@ -18,7 +18,20 @@ export interface PointsAdjustmentData {
   reason: string;
 }
 
+export interface CreateTaskData {
+  title: string;
+  description: string;
+  type: 'daily' | 'one-time';
+  points: number;
+  requires_review?: boolean;
+  assigned_to?: number | null;
+  deadline?: string | null; // ISO date string
+}
+
 export const adminApi = {
+  // Create new task (admin only)
+  createTask: (data: CreateTaskData): Promise<Task> =>
+    api.post('/admin/tasks', data).then(r => r.data),
   // Pending task suggestions (moderation)
   getPendingTasks: (): Promise<PendingTask[]> =>
     api.get('/admin/pending-tasks').then(r => r.data),

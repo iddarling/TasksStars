@@ -13,6 +13,13 @@ export interface SuggestTaskData {
   type: TaskType;
   points: number;
   requires_review?: boolean;
+  deadline?: string | null; // ISO date string
+}
+
+export interface CalendarData {
+  year: number;
+  month: number;
+  dates_with_tasks: number[];
 }
 
 export interface CompleteTaskData {
@@ -25,6 +32,14 @@ export const userTasksApi = {
   // Task suggestions
   suggestTask: (data: SuggestTaskData): Promise<Task> =>
     api.post('/user/suggest', data).then(r => r.data),
+
+  // Get tasks by date (for calendar filtering)
+  getTasksByDate: (date?: string): Promise<Task[]> =>
+    api.get('/tasks/by-date', { params: { date } }).then(r => r.data),
+
+  // Get calendar data (dates with tasks)
+  getCalendar: (year: number, month: number): Promise<CalendarData> =>
+    api.get('/tasks/calendar', { params: { year, month } }).then(r => r.data),
 
   // Get user's tasks
   getMyActive: (): Promise<TaskCompletion[]> =>

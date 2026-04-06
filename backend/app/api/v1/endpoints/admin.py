@@ -183,6 +183,8 @@ class TaskCreateAdmin(BaseModel):
     points: int
     status: TaskStatus = TaskStatus.ACTIVE
     requires_review: bool = True  # If True, admin must approve completions
+    assigned_to: Optional[int] = None  # If set, task is only for this user
+    deadline: Optional[datetime] = None  # Optional deadline
 
 
 class TaskUpdateAdmin(BaseModel):
@@ -192,6 +194,7 @@ class TaskUpdateAdmin(BaseModel):
     points: Optional[int] = None
     status: Optional[TaskStatus] = None
     requires_review: Optional[bool] = None
+    deadline: Optional[datetime] = None  # Optional deadline
 
 
 @router.get("/tasks")
@@ -218,7 +221,17 @@ async def create_task_admin(
     admin: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    """Create new task"""
+    """Create new task. If assigned_to is set, task is only visible to that user."""
+    
+    # If assigned to specific user, verify user exists
+    if task_in.assigned_to:
+        user_result = await db.execute(
+            select(User).where(User.id == task_in.assigned_to)
+        )
+        target_user = user_result.scalar_one_or_none()
+        if not target_user:
+            raise HTTPException(status_code=404, detail=f"User with id {task_in.assigned_to} not found")
+    
     task = Task(
         title=task_in.title,
         description=task_in.description,
@@ -226,10 +239,47 @@ async def create_task_admin(
         points=task_in.points,
         status=task_in.status,
         requires_review=task_in.requires_review,
-        created_by=admin.id
+        deadline=task_in.deadline,
+        created_by=admin.id,
+        # If assigned to user, mark as personal and set suggested_by to target user
+        is_personal=task_in.assigned_to is not None,
+        suggested_by=task_in.assigned_to
     )
     db.add(task)
     await db.commit()
+    
+    # Notify assigned user if specified
+    if task_in.assigned_to:
+        notification = Notification(
+            user_id=task_in.assigned_to,
+            type=NotificationType.TASK_APPROVED,
+            title="New Task Assigned!",
+            message=f"Admin assigned you a new task: '{task_in.title}' ({task_in.points} points)",
+            related_id=task.id
+        )
+        db.add(notification)
+        await db.commit()
+        
+        # Notify via WebSocket
+        await manager.send_to_user(task_in.assigned_to, {
+            "type": "task_assigned",
+            "data": {
+                "task_id": task.id,
+                "title": task_in.title,
+                "description": task_in.description,
+                "points": task_in.points,
+                "type": task_in.type.value,
+                "assigned_by": admin.email
+            }
+        })
+        
+        return {
+            "msg": "Task created and assigned to user",
+            "task_id": task.id,
+            "assigned_to": task_in.assigned_to,
+            "user_email": target_user.email
+        }
+    
     return task
 
 
@@ -258,6 +308,8 @@ async def update_task_admin(
         task.status = task_update.status
     if task_update.requires_review is not None:
         task.requires_review = task_update.requires_review
+    if task_update.deadline is not None:
+        task.deadline = task_update.deadline
     
     await db.commit()
     return task

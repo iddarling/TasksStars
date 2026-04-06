@@ -5,6 +5,7 @@ import { useAppStore } from '@/store/appStore';
 import { useUserStore } from '@/store/userStore';
 import { useRouter } from 'next/navigation';
 import { AnimatedBalance } from '@/components/AnimatedBalance';
+import MiniCalendar from '@/components/MiniCalendar';
 import { 
   Star, Trophy, TrendingUp, LogOut, Clock, CheckCircle, 
   Hourglass, Target, Zap, History
@@ -151,6 +152,15 @@ export default function DashboardPage() {
         <StatCard icon={Target} label="Completed" value={stats?.tasks_completed || 0} />
         <StatCard icon={Hourglass} label="Pending Review" value={stats?.tasks_pending_review || 0} />
       </div>
+
+      {/* MINI CALENDAR */}
+      <MiniCalendar 
+        onDateSelect={(date) => {
+          if (date) {
+            router.push(`/tasks?date=${date}`);
+          }
+        }}
+      />
 
       {/* ACTIVE TASKS */}
       {activeCompletions.length > 0 && (

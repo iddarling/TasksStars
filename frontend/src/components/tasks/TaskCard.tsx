@@ -1,6 +1,6 @@
 import React from 'react';
 import { Task } from '@/types';
-import { CheckCircle2, Clock, XCircle, Play, Hourglass } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, Play, Hourglass, Calendar } from 'lucide-react';
 
 interface TaskCardProps {
   task: Task;
@@ -51,6 +51,19 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onStart, showStar
           {task.type}
         </span>
       </div>
+      
+      {/* Deadline indicator */}
+      {task.deadline && (
+        <div className="flex items-center gap-1 text-[10px] text-zinc-500">
+          <Calendar size={12} className={
+            new Date(task.deadline) < new Date() ? 'text-red-500' : 'text-yellow-500'
+          } />
+          <span className={new Date(task.deadline) < new Date() ? 'text-red-500' : ''}>
+            Due: {new Date(task.deadline).toLocaleDateString()}
+          </span>
+        </div>
+      )}
+      
       {showStartButton && task.status === 'active' && onStart && (
         <button
           onClick={() => onStart(task.id)}

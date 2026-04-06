@@ -6,7 +6,7 @@ import { useUserStore } from '@/store/userStore';
 import { adminApi } from '@/services/adminApi';
 import { 
   ArrowLeft, User, Star, Clock, CheckCircle, Gift, 
-  TrendingUp, AlertCircle, Plus, Minus, Loader2 
+  TrendingUp, AlertCircle, Plus, Minus, Loader2, PlusCircle
 } from 'lucide-react';
 
 interface UserDetails {
@@ -72,6 +72,19 @@ export default function AdminUserDetailPage() {
   const [isAdjusting, setIsAdjusting] = useState(false);
   const [error, setError] = useState('');
 
+  // Create task form state
+  const [showCreateTask, setShowCreateTask] = useState(false);
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    type: 'one-time' as 'daily' | 'one-time',
+    points: 10,
+    requires_review: true,
+    deadline: null as string | null,
+  });
+  const [createTaskSuccess, setCreateTaskSuccess] = useState(false);
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
+
   const userId = parseInt(params.id as string);
 
   useEffect(() => {
@@ -118,6 +131,37 @@ export default function AdminUserDetailPage() {
       setError('Failed to adjust balance');
     } finally {
       setIsAdjusting(false);
+    }
+  };
+
+  const handleCreateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsCreatingTask(true);
+    setError('');
+    try {
+      await adminApi.createTask({
+        ...newTask,
+        assigned_to: userId,
+      });
+      setCreateTaskSuccess(true);
+      setNewTask({
+        title: '',
+        description: '',
+        type: 'one-time',
+        points: 10,
+        requires_review: true,
+        deadline: null,
+      });
+      setTimeout(() => {
+        setCreateTaskSuccess(false);
+        setShowCreateTask(false);
+      }, 2000);
+      await loadUserData();
+    } catch (error) {
+      console.error('Failed to create task', error);
+      setError('Failed to create task');
+    } finally {
+      setIsCreatingTask(false);
     }
   };
 
@@ -334,6 +378,126 @@ export default function AdminUserDetailPage() {
       {/* Tasks Tab */}
       {activeTab === 'tasks' && (
         <div className="space-y-6">
+          {/* Create Task Button / Form */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+            {!showCreateTask ? (
+              <button
+                onClick={() => setShowCreateTask(true)}
+                className="w-full py-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-yellow-500 font-black uppercase text-sm tracking-widest hover:bg-yellow-500/20 transition-colors flex items-center justify-center gap-2"
+              >
+                <PlusCircle size={20} />
+                Create New Task for This User
+              </button>
+            ) : (
+              <form onSubmit={handleCreateTask} className="space-y-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-sm font-black text-yellow-500 uppercase tracking-widest">Create Task</h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateTask(false)}
+                    className="text-zinc-500 hover:text-white text-xs"
+                  >
+                    Cancel
+                  </button>
+                </div>
+
+                {createTaskSuccess && (
+                  <div className="bg-green-500/20 border border-green-500/50 rounded-lg p-3 text-green-400 text-sm">
+                    Task created and assigned successfully!
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Title</label>
+                  <input
+                    type="text"
+                    value={newTask.title}
+                    onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                    className="w-full bg-black border border-zinc-800 rounded-lg p-3 text-white focus:outline-none focus:border-yellow-500"
+                    placeholder="Task title..."
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Description</label>
+                  <textarea
+                    value={newTask.description}
+                    onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                    className="w-full bg-black border border-zinc-800 rounded-lg p-3 text-white focus:outline-none focus:border-yellow-500"
+                    placeholder="Task description..."
+                    rows={2}
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Type</label>
+                    <select
+                      value={newTask.type}
+                      onChange={(e) => setNewTask({ ...newTask, type: e.target.value as 'daily' | 'one-time' })}
+                      className="w-full bg-black border border-zinc-800 rounded-lg p-3 text-white focus:outline-none focus:border-yellow-500"
+                    >
+                      <option value="one-time">One-time</option>
+                      <option value="daily">Daily</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Points</label>
+                    <input
+                      type="number"
+                      value={newTask.points}
+                      onChange={(e) => setNewTask({ ...newTask, points: parseInt(e.target.value) || 0 })}
+                      className="w-full bg-black border border-zinc-800 rounded-lg p-3 text-white focus:outline-none focus:border-yellow-500"
+                      min={1}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">
+                    Deadline (optional)
+                  </label>
+                  <input
+                    type="date"
+                    value={newTask.deadline || ''}
+                    onChange={(e) => setNewTask({ ...newTask, deadline: e.target.value || null })}
+                    className="w-full bg-black border border-zinc-800 rounded-lg p-3 text-white focus:outline-none focus:border-yellow-500"
+                  />
+                  {newTask.deadline && (
+                    <p className="text-[10px] text-yellow-500 mt-1">
+                      Task must be completed by: {new Date(newTask.deadline).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="requires_review"
+                    checked={newTask.requires_review}
+                    onChange={(e) => setNewTask({ ...newTask, requires_review: e.target.checked })}
+                    className="w-4 h-4 rounded border-zinc-600"
+                  />
+                  <label htmlFor="requires_review" className="text-[10px] text-zinc-400">
+                    Requires admin review before awarding points
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isCreatingTask || !newTask.title || !newTask.description}
+                  className="w-full bg-yellow-500 text-black font-black py-3 rounded-lg hover:bg-yellow-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest"
+                >
+                  {isCreatingTask ? 'Creating...' : 'Create Task'}
+                </button>
+              </form>
+            )}
+          </div>
+
           {/* Active Tasks */}
           <div>
             <h3 className="text-sm font-black text-yellow-500 uppercase tracking-widest mb-3 flex items-center gap-2">

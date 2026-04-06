@@ -37,6 +37,7 @@ export interface Task {
   created_by?: number;
   requires_review: boolean;
   is_personal: boolean;
+  deadline?: string; // ISO date string
   created_at: string;
   approved_at?: string;
 }

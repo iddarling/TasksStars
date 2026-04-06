@@ -121,6 +121,11 @@ export const useAppStore = create<AppState>((set, get) => ({
         get().fetchBalance();
         get().fetchNotifications();
         break;
+
+      case 'task_assigned':
+        get().fetchTasks();
+        get().fetchNotifications();
+        break;
         
       case 'task_cancelled':
         get().fetchMyActiveTasks();
@@ -143,6 +148,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       case 'completion_approved':
         get().fetchMyActiveTasks();
         get().fetchMyCompletedTasks();
+        get().fetchMyAwaitingReviewTasks();
         get().fetchBalance();
         get().fetchNotifications();
         break;
@@ -283,6 +289,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         activeCompletions: get().activeCompletions.filter(c => c.task_id !== taskId)
       });
       await get().fetchMyCompletedTasks();
+      await get().fetchMyAwaitingReviewTasks();
       return completionResult;
     } catch (error) {
       console.error('Failed to complete task', error);
