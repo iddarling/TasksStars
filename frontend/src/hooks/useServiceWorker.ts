@@ -65,7 +65,6 @@ export async function forceSync() {
     // Also trigger background sync if available
     if ('sync' in registration) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (registration as any).sync.register('sync-pending-requests');
       } catch (error) {
         console.error('[SW] Background sync registration failed:', error);
