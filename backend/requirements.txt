@@ -15,3 +15,4 @@ apscheduler
 httpx
 python-dotenv
 cryptography
+psycopg2-binary>=2.9
