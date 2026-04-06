@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 1 week
 
-    DATABASE_URL: str = "postgresql+asyncpg://postgresql://taskstars_db_user:mNmJnwHFJCReTek6T1OdEJMWIRlfYWVo@dpg-d77u6a75r7bs739k9lkg-a/taskstars_db"
+    DATABASE_URL: str = "postgresql+asyncpg://taskstars_db_user:mNmJnwHFJCReTek6T1OdEJMWIRlfYWVo@dpg-d77u6a75r7bs739k9lkg-a/taskstars_db"
 
     VAPID_PRIVATE_KEY: str = "f5fbe89b376274602f22b54f65eff87d"
     VAPID_PUBLIC_KEY: str = "17d2b5d5e8320ffc6560d297a3786230"
