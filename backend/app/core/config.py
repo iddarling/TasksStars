@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings
 from typing import List
-import os
+from pydantic import field_validator
 
 
 class Settings(BaseSettings):
@@ -20,6 +20,16 @@ class Settings(BaseSettings):
         "http://localhost:3001",
         "https://taskstars-frontend.onrender.com"
     ]
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def set_async_driver(cls, v: str) -> str:
+        """Ensure PostgreSQL URL uses asyncpg driver."""
+        if v.startswith("postgresql+psycopg2://"):
+            return v.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+        elif v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
 
     class Config:
         env_file = ".env"
